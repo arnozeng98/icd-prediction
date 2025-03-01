@@ -1,46 +1,56 @@
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
-from src.data_utils import load_and_preprocess_data
-from src.feature_extraction import extract_features
-from src.model_training import train_bert_model
-from src.svm_utils import train_svm
+from src.data_processing import load_and_preprocess_data, extract_features
+from src.dl_models import train_bert_model
 from src.bert_utils import compute_bert_embeddings, bert_tokenizer, bert_model_embed, device
-from src.io_utils import read_data, write_predictions
-from src.metrics import calculate_acc
+from src.utils import read_data, write_predictions, calculate_acc
 from src.config import TRAIN_FILE_PATH, TEST_FILE_PATH, OUTPUT_FILE_PATH
+from src.ml_models import train_stacking_model
 
-# 读取训练集数据
+# Load training data
 (X_train_text_main, X_val_text_main, y_train_main, y_val_main,
- X_train_text_other, X_val_text_other, y_train_other, y_val_other, mlb) = load_and_preprocess_data(TRAIN_FILE_PATH)
+ X_train_text_other, X_val_text_other, y_train_other, y_val_other, mlb, label_encoder) = load_and_preprocess_data(TRAIN_FILE_PATH)
 
 X_train_fused, X_val_fused, vectorizer, scaler_tfidf, scaler_bert = extract_features(X_train_text_main, X_val_text_main)
 
-best_svm = train_svm(X_train_fused, y_train_main)
-y_pred_main = best_svm.predict(X_val_fused)
-print("Best SVM parameters:", best_svm.get_params())
+# Train Stacking model
+stacking_clf = train_stacking_model(X_train_fused, y_train_main)
+y_pred_main = stacking_clf.predict(X_val_fused)
+
+# Format and print the best stacking model parameters
+best_params = stacking_clf.get_params()
+formatted_params = "\n".join([f"{key}: {value}" for key, value in best_params.items()])
+print(f"Best Stacking model parameters:\n{formatted_params}")
+
+# Calculate single-label prediction accuracy
+main_accuracy = np.mean(y_pred_main == y_val_main)
+print(f"Main diagnosis accuracy: {main_accuracy:.4f}")
 
 num_classes_other = y_train_other.shape[1]
 model, best_thresholds = train_bert_model(X_train_text_other, y_train_other, X_val_text_other, y_val_other, bert_tokenizer, num_classes_other, device)
 
-# 计算验证集上的Acc评分
-y_pred_other_binary = np.zeros_like(y_val_other)  # 假设y_pred_other_binary已经计算出来
+# Calculate Acc score on validation set
+y_pred_other_binary = np.zeros_like(y_val_other)  # Assuming y_pred_other_binary is already calculated
 acc_score = calculate_acc(y_val_main, y_pred_main, y_val_other, y_pred_other_binary)
 print(f"Final Acc Score on Validation: {acc_score:.4f}")
 
-# 读取测试集数据
+# Load test data
 test_df = read_data(TEST_FILE_PATH)
-print(f"test_df type: {type(test_df)}")  # 添加调试信息
+print(f"test_df type: {type(test_df)}")  # Add debug information
 X_test_text = test_df["combined_text"]
 
-# 主诊断预测：使用之前训练好的 TF-IDF 与 BERT 特征融合
+# Main diagnosis prediction: use previously trained TF-IDF and BERT feature fusion
 X_test_tfidf = vectorizer.transform(X_test_text)
 X_test_bert = compute_bert_embeddings(X_test_text.tolist(), bert_tokenizer, bert_model_embed, max_len=128, device=device)
 X_test_tfidf_dense = X_test_tfidf.toarray()
 X_test_fused = np.hstack([scaler_tfidf.transform(X_test_tfidf_dense), scaler_bert.transform(X_test_bert)])
-y_test_main = best_svm.predict(X_test_fused)
+y_test_main = stacking_clf.predict(X_test_fused)
 
-# 其他诊断预测：构造测试集 Dataset 与 DataLoader
+# Convert integer labels back to original ICD codes
+y_test_main = label_encoder.inverse_transform(y_test_main)
+
+# Other diagnosis prediction: construct test set Dataset and DataLoader
 class ICDDatasetTest(Dataset):
     def __init__(self, texts, tokenizer, max_len=128):
         self.texts = texts
@@ -69,7 +79,7 @@ with torch.no_grad():
         y_test_pred.append(logits.cpu().numpy())
 y_test_pred = np.concatenate(y_test_pred, axis=0)
 
-# 定义 apply_thresholds 函数
+# Define apply_thresholds function
 def apply_thresholds(logits, thresholds):
     preds = np.zeros_like(logits, dtype=int)
     for i in range(logits.shape[1]):
@@ -80,8 +90,8 @@ def apply_thresholds(logits, thresholds):
     return preds
 
 y_test_pred_binary = apply_thresholds(y_test_pred, best_thresholds)
-# 利用 mlb 将二值结果转换为 ICD 编码列表
+# Use mlb to convert binary results to ICD code list
 y_test_other_codes = mlb.inverse_transform(y_test_pred_binary)
 
-# 输出预测结果
+# Output prediction results
 write_predictions(test_df, y_test_main, y_test_other_codes, OUTPUT_FILE_PATH)
