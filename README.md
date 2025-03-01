@@ -1,6 +1,6 @@
 # Alibaba Tianchi: CCL2025 - Chinese Electronic Medical Record ICD Diagnosis Coding Evaluation
 
-[中文](#1-task-overview)
+[中文](https://github.com/arnozeng98/icd-prediction/blob/main/README_zh.md)
 
 ## Background
 
