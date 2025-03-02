@@ -124,11 +124,11 @@ Sample Data (JSON Format):
 
 The competition evaluates ICD coding accuracy using the accuracy (Acc) metric, calculated as:
 
-$$
-Acc = \frac{1}{N} \sum_{i=1}^{N} \lbrace 0.5 \cdot I(\hat{y}_{main} == y_{main}) + 0.5 \cdot \frac{NUM(y_{other} \cap \hat{y}_{other})}{NUM(y_{other})} \rbrace_{i}
-$$
+\[
+\text{Acc} = \frac{1}{N} \sum_{i=1}^{N} \lbrace 0.5 \cdot I(\hat{y}_{\text{main}} == y_{\text{main}}) + 0.5 \cdot \frac{\text{NUM}(y_{\text{other}} \cap \hat{y}_{\text{other}})}{\text{NUM}(y_{\text{other}})} \rbrace_{i}
+\]
 
-Where $I(\cdot)$ is an indicator function that returns `1` if the condition is met and `0`otherwise. $\hat{y}_{main}$ and $y_{main}$ represent the predicted label and true label of the main diagnosis code, respectively. $NUM(x)$ represents a quantity function that is used to calculate the number of $x$ . $\hat{y}_{other}$ and $y_{other}$ represent the predicted label set and true label set of other diagnosis codes, respectively. $N$ is the number of test samples. $\lbrace \cdot \rbrace_i$ is the prediction accuracy of the `i-th` Chinese electronic medical record.
+Where \(I(\cdot)\) is an indicator function that returns `1` if the condition is met and `0`otherwise. \(\hat{y}_{\text{main}}\) and \(y_{\text{main}}\) represent the predicted label and true label of the main diagnosis code, respectively. \(\text{NUM}(x)\) represents a quantity function that is used to calculate the number of \(x\) . \(\hat{y}_{\text{other}}\) and \(y_{\text{other}}\) represent the predicted label set and true label set of other diagnosis codes, respectively. \(N\) is the number of test samples. \(\lbrace \cdot \rbrace_i\) is the prediction accuracy of the `i-th` Chinese electronic medical record.
 
 ## Baseline Performance
 

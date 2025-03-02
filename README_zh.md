@@ -111,11 +111,11 @@ A榜评测结果在阿里云天池平台进行。A榜阶段每天可提交5次�
 
 中文电子病历ICD诊断编码任务采用正确率（Acc）作为评测指标，计算公式如下：
 
-$$
-Acc = \frac{1}{N} \sum_{i=1}^{N} \lbrace 0.5 \cdot I(\hat{y}_{main} == y_{main}) + 0.5 \cdot \frac{NUM(y_{other} \cap \hat{y}_{other})}{NUM(y_{other})} \rbrace_{i}
-$$
+\[
+\text{Acc} = \frac{1}{N} \sum_{i=1}^{N} \lbrace 0.5 \cdot I(\hat{y}_{\text{main}} == y_{\text{main}}) + 0.5 \cdot \frac{\text{NUM}(y_{\text{other}} \cap \hat{y}_{\text{other}})}{\text{NUM}(y_{\text{other}})} \rbrace_{i}
+\]
 
-其中，$I(\cdot)$为指示函数，满足条件返回`1`，否则返回`0`，$\hat{y}_{main}$和$y_{main}$分别表示主诊断编码的预测标签和真实标签；$NUM(x)$代表数量函数，用来计算$x$的数量，$\hat{y}_{other}$和$y_{other}$分别表示其他诊断编码的预测标签集和真实标签集；$N$测试样本的数量；$\lbrace \cdot \rbrace_i$为第$i$个中文电子病历的预测准确率。
+其中，\(I(\cdot)\)为指示函数，满足条件返回`1`，否则返回`0`，\(\hat{y}_{\text{main}}\)和\(y_{\text{main}}\)分别表示主诊断编码的预测标签和真实标签；\(\text{NUM}(x)\)代表数量函数，用来计算\(x\)的数量，\(\hat{y}_{\text{other}}\)和\(y_{\text{other}}\)分别表示其他诊断编码的预测标签集和真实标签集；\(N\)测试样本的数量；\(\lbrace \cdot \rbrace_i\)为第\(i\)个中文电子病历的预测准确率。
 
 ### Baseline
 
